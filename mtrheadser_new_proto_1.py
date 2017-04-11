@@ -9,7 +9,7 @@ errors={
     }
 usernames=("admin","shadow","test")
 passwords={
-    "admin":"G4H81525122015Na",
+    "admin":"password",##Those are just for testing
     "shadow":"darkshadow",
     "test":"testpassword"
     }
