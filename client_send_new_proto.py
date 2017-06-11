@@ -1,6 +1,6 @@
 import socket
 import libs.reorderer as reorderer
-passw="6547"
+passw="6545766768503480"
 wait_count=0
 class iotserver:
         conversion_type="ascii"
@@ -24,7 +24,7 @@ class iotserver:
                         print('conversion type not allowed!')
                 
 s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-host=socket.gethostname()
+host=socket.gethostname()##"192.168.1.79"
 port=9009
 iotserver.setConversionType("utf-8")
 connected=0
@@ -55,7 +55,7 @@ elif command=="done":
                 while command=="wait":
                         wait_count+=0.00001
                         command=iotserver.conv_recv(s)
-                print("[!]Server has responded!")
+                        print("[!]Server has responded!")
         else:
                 iotserver.conv_send(s,u_pass)
                 command=iotserver.conv_recv(s)
