@@ -9,7 +9,7 @@ errors={
     }
 usernames=("admin","shadow","test")
 passwords={
-    "admin":"password",##Those are just for testing
+    "admin":"G4H81525122015Na",
     "shadow":"darkshadow",
     "test":"testpassword"
     }
@@ -21,6 +21,8 @@ class ThreadedServer(object):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((self.host, self.port))
+        self.clients_lock = threading.Lock()
+        self.clients = set()
         
     def listen(self):
 
@@ -33,7 +35,7 @@ class ThreadedServer(object):
     def askForUsername(self, client, address):
         try:
             client.sendall("id_type".encode("utf-8"))
-            if client.recv(1024).decode("utf-8")=="id_recive":
+            if client.recv(1024).decode("utf-8")=="id_recv":
                 print("[!]Recive client is connecting...")
                 threading.Thread(target = self.askForPassword, args = (client, str(address[0]),"recv_id")).start()
             else:
@@ -65,16 +67,20 @@ class ThreadedServer(object):
             client.close()
 
     def askForPassword(self, client, address, username):
-        clients_lock = threading.Lock()
-        clients = set()
+
         try:
             print(username)
-            if username=="id_recv":
+            if username=="recv_id":
                 print("[!]'Recive' client is connecting: bypassing password necessity!")
                 client.sendall("wait".encode("utf-8"))
-                with clients_lock:
-                    clients.add(client)
-                threading.Thread(target=self.listenToClient, args=(client, address, clients, clients_lock)).start()
+                print("Adding clinet to clock")
+                with self.clients_lock:
+                    self.clients.add(client)
+                    print("Client added:"+ str(client))
+                    ##for c in self.clients:     ##<-used to check logged in users
+                    ##    print(c)               ##<-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                
+                threading.Thread(target=self.listenToClient, args=(client, address, self.clients, self.clients_lock)).start()
             elif username=="0x001000A":
                 print("[*]Sending error info...")
                 client.sendall("ask_password".encode("utf-8"))
@@ -92,9 +98,9 @@ class ThreadedServer(object):
                         client.sendall("wait".encode("utf-8"))
                         
                         if client.recv(1024).decode("utf-8")=="waiting":
-                            with clients_lock:
-                                clients.add(client)
-                            threading.Thread(target=self.listenToClient, args=(client, address, clients, clients_lock)).start()
+                            with self.clients_lock:
+                                self.clients.add(client)
+                            threading.Thread(target=self.listenToClient, args=(client, address, self.clients, self.clients_lock)).start()
                     else:
                         print("[!]ALERT: client hasn't accepted the handshake, closing connection!")
                         client.close()
@@ -108,17 +114,17 @@ class ThreadedServer(object):
             print("[!!!]Unexpected error!")
             client.close()
             
-
     def listenToClient(self, client, address, clients, clients_lock):
         size = 1024
         client.sendall("free".encode("utf-8"))
         while True:
             try:
                 data = client.recv(size)
-                print("[*]Recived client data from [" + address+"]")
+                print("[*]Recived client data from ["+address+"]")
                 if data:
-                    with clients_lock:
-                        for c in clients:
+                    with self.clients_lock:
+                        for c in self.clients:
+                            ##print(c) ##<-used to check logged in users
                             c.sendall(data)
                 else:
                     raise error('[!]Client disconnected')
